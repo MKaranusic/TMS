@@ -60,7 +60,6 @@ try
             .AllowAnyHeader());
     }
 
-
     // Left for production as per the requirment
     app.UseSwagger();
     app.UseSwaggerUI();

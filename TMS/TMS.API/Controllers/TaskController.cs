@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TMS.API.Extensions;
 using TMS.API.Models.DTOs.Request;
 using TMS.API.Models.DTOs.Response;
-using TMS.Core.Models;
+using TMS.Core.Models.Filters;
 using TMS.Core.Services.Interfaces;
 
 namespace TMS.API.Controllers;
@@ -22,20 +23,58 @@ public class TaskController(ITaskService taskService) : ControllerBase
 
         var result = await taskService.GetTasksAsync(filter);
 
-        var response = new PaginatedResponse<TaskDto>
-        {
-            Items = result.Items.Select(t => new TaskDto
-            {
-                Id = t.Id,
-                Subject = t.Subject,
-                Description = t.Description,
-                IsCompleted = t.IsCompleted
-            }),
-            Page = result.Page,
-            PageSize = result.PageSize,
-            TotalCount = result.TotalCount
-        };
+        return Ok(result.ToResponse(t => t.ToDto()));
+    }
 
-        return Ok(response);
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<TaskDto>> GetTaskById(int id)
+    {
+        var task = await taskService.GetTaskByIdAsync(id);
+
+        if (task is null)
+            return NotFound();
+
+        return Ok(task.ToDto());
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<TaskDto>> CreateTask([FromBody] CreateTaskRequest request)
+    {
+        var task = await taskService.CreateTaskAsync(request.ToModel());
+
+        return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task.ToDto());
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<TaskDto>> UpdateTask(int id, [FromBody] UpdateTaskRequest request)
+    {
+        var task = await taskService.UpdateTaskAsync(id, request.ToModel());
+
+        if (task is null)
+            return NotFound();
+
+        return Ok(task.ToDto());
+    }
+
+    [HttpPatch("{id:int}/toggle")]
+    public async Task<ActionResult<TaskDto>> ToggleCompleted(int id)
+    {
+        var task = await taskService.ToggleCompletedAsync(id);
+
+        if (task is null)
+            return NotFound();
+
+        return Ok(task.ToDto());
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteTask(int id)
+    {
+        var deleted = await taskService.DeleteTaskAsync(id);
+
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
     }
 }

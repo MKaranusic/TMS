@@ -21,8 +21,44 @@ public class TMSDbContext(DbContextOptions<TMSDbContext> options) : DbContext(op
 
             entity.Property(t => t.Description)
                   .HasMaxLength(2000);
+
+            entity.Property(t => t.CreatedAt)
+                  .IsRequired();
+
+            entity.HasIndex(t => t.CreatedAt);
         });
 
         modelBuilder.SeedData();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        UpdateTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override int SaveChanges()
+    {
+        UpdateTimestamps();
+        return base.SaveChanges();
+    }
+
+    private void UpdateTimestamps()
+    {
+        var entries = ChangeTracker.Entries<TaskEntity>();
+
+        foreach (var entry in entries)
+        {
+            if (entry.State == EntityState.Added)
+            {
+                var now = DateTime.UtcNow;
+                entry.Entity.CreatedAt = now;
+                entry.Entity.ModifiedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.ModifiedAt = DateTime.UtcNow;
+            }
+        }
     }
 }

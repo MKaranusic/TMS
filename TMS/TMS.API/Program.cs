@@ -11,7 +11,6 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
-
 try
 {
     Log.Information("Starting TMS.API");

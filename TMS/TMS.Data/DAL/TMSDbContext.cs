@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TMS.Data.Entities;
+using TMS.Data.Extensions;
 
 namespace TMS.Data.DAL;
 
 public class TMSDbContext(DbContextOptions<TMSDbContext> options) : DbContext(options)
 {
     public DbSet<TaskEntity> Tasks { get; set; }
-    public DbSet<StatusEntity> Statuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -15,18 +15,14 @@ public class TMSDbContext(DbContextOptions<TMSDbContext> options) : DbContext(op
             entity.ToTable("Tasks");
             entity.HasKey(t => t.Id);
 
-            entity.HasIndex(t => t.StatusId);
+            entity.Property(t => t.Subject)
+                  .HasMaxLength(200)
+                  .IsRequired();
 
-            entity.HasOne(t => t.Status)
-                  .WithMany()
-                  .HasForeignKey(t => t.StatusId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(t => t.Description)
+                  .HasMaxLength(2000);
         });
 
-        modelBuilder.Entity<StatusEntity>(entity =>
-        {
-            entity.ToTable("Statuses");
-            entity.HasKey(s => s.Id);
-        });
+        modelBuilder.SeedData();
     }
 }

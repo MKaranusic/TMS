@@ -1,25 +1,80 @@
-var builder = WebApplication.CreateBuilder(args);
+using Serilog;
+using Serilog.Events;
+using TMS.API.Configuration;
+using TMS.API.Middleware;
+using TMS.API.Utilities;
+using TMS.API.Utilities.Configuration;
 
-// Add services to the container.
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+try
 {
+    Log.Information("Starting TMS.API");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((context, services, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "TMS.API"));
+
+    // Add services to the container.
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+    builder.Services.AddProblemDetails();
+    builder.Services.AddExceptionHandler<EnhancedGlobalExceptionHandler>();
+
+    builder.Services.AddAppOptions(builder.Configuration);
+    builder.Services.RegisterDomainServices(builder.Configuration);
+
+    var app = builder.Build();
+
+    app.UseExceptionHandler();
+    app.UseHttpsRedirection();
+
+    if (app.Environment.IsProduction())
+    {
+        app.UseHsts();
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors")
+            .Get<Cors>()
+            .AllowedOrigins;
+
+        app.UseCors(policy => policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+    }
+    else
+    {
+        app.UseCors(policy => policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+    }
+
+
+    // Left for production as per the requirment
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    app.MapControllers();
+
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Host terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

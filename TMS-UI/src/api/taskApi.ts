@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
-import type { TaskDto, CreateTaskRequest, UpdateTaskRequest, PaginatedResponse, GetTasksParams } from '../types/Task';
+import type { TaskDto, CreateTaskRequest, UpdateTaskRequest, PaginatedResponse, GetTasksParams, ReorderTasksRequest } from '../types/Task';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -37,5 +37,9 @@ export const taskApi = {
   toggleComplete: async (id: number): Promise<TaskDto> => {
     const response = await apiClient.patch<TaskDto>(`/Task/${id}/toggle`);
     return response.data;
+  },
+
+  reorder: async (taskIds: number[]): Promise<void> => {
+    await apiClient.put('/Task/reorder', { taskIds } as ReorderTasksRequest);
   },
 };

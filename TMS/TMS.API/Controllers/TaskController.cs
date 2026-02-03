@@ -77,4 +77,15 @@ public class TaskController(ITaskService taskService) : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPut("reorder")]
+    public async Task<IActionResult> ReorderTasks([FromBody] ReorderTasksRequest request)
+    {
+        var success = await taskService.ReorderTasksAsync(request.TaskIds);
+
+        if (!success)
+            return BadRequest("One or more task IDs are invalid.");
+
+        return NoContent();
+    }
 }

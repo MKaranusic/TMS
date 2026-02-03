@@ -148,6 +148,32 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setError(null);
   }, []);
 
+  const reorderTasks = useCallback(async (activeId: number, overId: number) => {
+    const oldIndex = tasks.findIndex(t => t.id === activeId);
+    const newIndex = tasks.findIndex(t => t.id === overId);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    // Optimistically update UI
+    const newTasks = [...tasks];
+    const [movedTask] = newTasks.splice(oldIndex, 1);
+    newTasks.splice(newIndex, 0, movedTask);
+    setTasks(newTasks);
+    
+    // Persist to backend - send task IDs in desired display order (first ID appears first)
+    try {
+      const taskIds = newTasks.map(t => t.id);
+      await taskApi.reorder(taskIds);
+      // Refresh task list from server to get updated SortOrder values
+      await fetchTasks(filter, currentPage);
+    } catch (err) {
+      // Revert on error
+      setTasks(tasks);
+      setError('Failed to save task order.');
+      console.error('Error reordering tasks:', err);
+    }
+  }, [tasks, filter, currentPage, fetchTasks]);
+
   const value: TaskContextType = {
     // State
     tasks,
@@ -170,6 +196,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     toggleTaskComplete,
     goToPage,
     clearError,
+    reorderTasks,
   };
 
   return (

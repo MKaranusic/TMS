@@ -1,5 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { useTask } from '../context/useTask';
+import { SortableTaskItem } from './SortableTaskItem';
 import type { TaskDto } from '../types/Task';
 import './TaskList.css';
 
@@ -22,7 +37,23 @@ function TaskList() {
     deleteTask,
     toggleTaskComplete,
     goToPage,
+    reorderTasks,
   } = useTask();
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Memoize task IDs for SortableContext
+  const taskIds = useMemo(() => tasks.map(task => task.id), [tasks]);
 
   // Local form state
   const [newTaskSubject, setNewTaskSubject] = useState('');
@@ -41,6 +72,14 @@ function TaskList() {
     fetchTasks(filter, 1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      reorderTasks(active.id as number, over.id as number);
+    }
+  };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,46 +300,26 @@ function TaskList() {
               <p>{filter === 'all' ? 'Begin by creating a new task above.' : 'No tasks match this filter.'}</p>
             </div>
           ) : (
-            <ul className="myth-task-list">
-              {tasks.map((task) => (
-                <li key={task.id} className={`myth-task-item ${task.isCompleted ? 'completed' : ''}`}>
-                  <input
-                    type="checkbox"
-                    className="myth-checkbox"
-                    checked={task.isCompleted}
-                    onChange={() => handleToggleComplete(task)}
-                  />
-                  <div className="myth-task-content" onClick={() => setViewingTask(task)} style={{ cursor: 'pointer' }}>
-                    <p className={`myth-task-subject ${task.isCompleted ? 'completed' : ''}`}>
-                      {task.subject}
-                    </p>
-                    {task.description && (
-                      <p className="myth-task-description myth-task-description-truncate">{task.description}</p>
-                    )}
-                  </div>
-                  <div className="myth-task-actions">
-                    <button
-                      className="myth-button myth-button-secondary myth-button-small"
-                      onClick={() => setViewingTask(task)}
-                    >
-                      View
-                    </button>
-                    <button
-                      className="myth-button myth-button-secondary myth-button-small"
-                      onClick={() => handleStartEdit(task)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="myth-button myth-button-danger myth-button-small"
-                      onClick={() => handleDeleteTask(task.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+                <ul className="myth-task-list">
+                  {tasks.map((task) => (
+                    <SortableTaskItem
+                      key={task.id}
+                      task={task}
+                      onToggleComplete={handleToggleComplete}
+                      onView={setViewingTask}
+                      onEdit={handleStartEdit}
+                      onDelete={handleDeleteTask}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
 
           {/* Pagination Controls */}

@@ -23,7 +23,8 @@ public class TaskService(TMSDbContext dbContext) : ITaskService
         var totalCount = await query.CountAsync();
 
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.SortOrder)
+            .ThenByDescending(t => t.CreatedAt)
             .Skip((filter.Page - 1) * filter.PageSize)
             .Take(filter.PageSize)
             .ToListAsync();
@@ -48,11 +49,14 @@ public class TaskService(TMSDbContext dbContext) : ITaskService
 
     public async Task<TaskItem> CreateTaskAsync(CreateTask create)
     {
+        var maxSortOrder = await dbContext.Tasks.MaxAsync(t => (int?)t.SortOrder) ?? -1;
+
         var entity = new TaskEntity
         {
             Subject = create.Subject,
             Description = create.Description,
-            IsCompleted = false
+            IsCompleted = false,
+            SortOrder = maxSortOrder + 1
         };
 
         dbContext.Tasks.Add(entity);
@@ -105,6 +109,33 @@ public class TaskService(TMSDbContext dbContext) : ITaskService
         }
 
         dbContext.Tasks.Remove(entity);
+        await dbContext.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> ReorderTasksAsync(IEnumerable<int> taskIds)
+    {
+        var ids = taskIds.ToList();
+        var tasks = await dbContext.Tasks
+            .Where(t => ids.Contains(t.Id))
+            .ToListAsync();
+
+        if (tasks.Count != ids.Count)
+        {
+            return false;
+        }
+
+        // Get the max SortOrder among the tasks being reordered
+        var maxSortOrder = tasks.Max(t => t.SortOrder);
+
+        // First item in list gets highest SortOrder (appears first in descending order)
+        for (var i = 0; i < ids.Count; i++)
+        {
+            var task = tasks.First(t => t.Id == ids[i]);
+            task.SortOrder = maxSortOrder - i;
+        }
+
         await dbContext.SaveChangesAsync();
 
         return true;

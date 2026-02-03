@@ -26,6 +26,7 @@ public class TMSDbContext(DbContextOptions<TMSDbContext> options) : DbContext(op
                   .IsRequired();
 
             entity.HasIndex(t => t.CreatedAt);
+            entity.HasIndex(t => t.SortOrder);
         });
 
         modelBuilder.SeedData();

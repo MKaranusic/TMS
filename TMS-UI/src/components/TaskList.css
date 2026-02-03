@@ -270,6 +270,41 @@
   box-shadow: 0 0 8px rgba(201, 162, 39, 0.4);
 }
 
+/* Drag Handle */
+.myth-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  cursor: grab;
+  color: #6a6a7a;
+  user-select: none;
+  touch-action: none;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+
+.myth-drag-handle:active {
+  cursor: grabbing;
+}
+
+.myth-drag-icon {
+  font-size: 1.2rem;
+  letter-spacing: -2px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.myth-task-item:hover .myth-drag-icon {
+  opacity: 1;
+  color: #c9a227;
+}
+
+.myth-task-item.dragging {
+  box-shadow: 0 8px 25px rgba(201, 162, 39, 0.4);
+  z-index: 1000;
+}
+
 .myth-task-content {
   flex: 1;
   min-width: 0;

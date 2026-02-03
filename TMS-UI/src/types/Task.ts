@@ -36,3 +36,8 @@ export interface GetTasksParams {
   PageSize?: number;
   IsCompleted?: boolean;
 }
+
+// ReorderTasksRequest - for PUT /api/Task/reorder
+export interface ReorderTasksRequest {
+  taskIds: number[];
+}

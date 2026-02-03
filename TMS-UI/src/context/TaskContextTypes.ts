@@ -26,4 +26,5 @@ export interface TaskContextType {
   toggleTaskComplete: (task: TaskDto) => Promise<boolean>;
   goToPage: (page: number) => void;
   clearError: () => void;
+  reorderTasks: (activeId: number, overId: number) => Promise<void>;
 }

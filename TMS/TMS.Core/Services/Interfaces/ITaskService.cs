@@ -12,4 +12,5 @@ public interface ITaskService
     Task<TaskItem?> UpdateTaskAsync(int id, UpdateTask update);
     Task<TaskItem?> ToggleCompletedAsync(int id);
     Task<bool> DeleteTaskAsync(int id);
+    Task<bool> ReorderTasksAsync(IEnumerable<int> taskIds);
 }

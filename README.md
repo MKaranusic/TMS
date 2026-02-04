@@ -22,6 +22,8 @@ To stop: download and run [`stop-tms.bat`](stop-tms.bat)
 
 >  This pulls pre-built images from [Docker Hub](https://hub.docker.com/u/mislavk). The images contain only the compiled application code - no secrets or sensitive data.
 
+>  NOTE: if there is not data in the UI, refresh (FE could load faster than FE)
+
 ---
 
 ### Option 2: Build from Source (More Control)
@@ -87,26 +89,3 @@ UI runs at: http://localhost:5173
 - **Paginated List** - Navigate through tasks with page controls
 
 ---
-
-## ? Tech Stack
-
-| Layer      | Technology                     |
-|------------|--------------------------------|
-| Frontend   | React 18, TypeScript, Vite     |
-| Backend    | .NET 8, ASP.NET Core Web API   |
-| Database   | SQL Server 2022                |
-| Container  | Docker, Docker Compose         |
-
----
-
-##  Project Structure
-
-```
-TaskDemo/
-? TMS/                    # Backend solution
-?   ? TMS.API/            # ASP.NET Core Web API
-? TMS-UI/                 # React frontend
-? docker-compose.yml      # Build from source
-? docker-compose.prod.yml # Pre-built images
-? start-tms.bat           # One-click launcher
-? stop-tms.bat            # Stop the app

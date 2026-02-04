@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using TMS.API.Configuration;
 using TMS.API.Middleware;
 using TMS.API.Utilities;
 using TMS.API.Utilities.Configuration;
+using TMS.Data.DAL;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -36,8 +38,13 @@ try
 
     var app = builder.Build();
 
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<TMSDbContext>();
+        dbContext.Database.Migrate();
+    }
+
     app.UseExceptionHandler();
-    app.UseHttpsRedirection();
 
     if (app.Environment.IsProduction())
     {

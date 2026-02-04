@@ -126,10 +126,8 @@ public class TaskService(TMSDbContext dbContext) : ITaskService
             return false;
         }
 
-        // Get the max SortOrder among the tasks being reordered
         var maxSortOrder = tasks.Max(t => t.SortOrder);
 
-        // First item in list gets highest SortOrder (appears first in descending order)
         for (var i = 0; i < ids.Count; i++)
         {
             var task = tasks.First(t => t.Id == ids[i]);
